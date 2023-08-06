@@ -45,10 +45,11 @@ function RoundService:KnitStart()
     local CoreLife = Instance.new("IntValue")
     CoreLife.Name = "CoreLife"
     CoreLife.Parent = RoundInfo
-    CoreLife.Value = 1000
+   
 
     local function RoundLoop()
-        
+        CoreLife.Value = 1000
+        CurrentWave.Value = 0
         while CoreLife.Value > 0 and task.wait(1) do
             --Increment wave
             CurrentWave.Value = CurrentWave.Value + 1
