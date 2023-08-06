@@ -15,7 +15,7 @@ dependencies = [["Promise", "evaera/promise@4.0.0"]]
 [[package]]
 name = "proxi/hammertime"
 version = "0.1.0"
-dependencies = [["Janitor", "howmanysmall/janitor@1.15.5"], ["Knit", "sleitnick/knit@1.5.1"], ["Promise", "evaera/promise@4.0.0"]]
+dependencies = [["Janitor", "howmanysmall/janitor@1.15.5"], ["Knit", "sleitnick/knit@1.5.1"], ["Promise", "evaera/promise@4.0.0"], ["Signal", "sleitnick/signal@1.5.0"]]
 
 [[package]]
 name = "sleitnick/comm"
