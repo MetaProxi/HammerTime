@@ -15,56 +15,76 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --Dependencies
 local AIService
+local HammerService
+local PlayerService
 local Promise = require(ReplicatedStorage.Packages.Promise)
 
 --Service
 local RoundService = Knit.CreateService {
     Name = "RoundService";
-    Client = {};
+    Client = {
+        GameOver = Knit.CreateSignal();
+        WaveOver = Knit.CreateSignal();
+    };
 }
 
 function RoundService:DamageCore(damage)
-    local RoundInfo = ReplicatedStorage:WaitForChild("RoundInfo")
-    local CoreLife = RoundInfo:WaitForChild("CoreLife")
-    CoreLife.Value = CoreLife.Value - damage
+    local roundInfo = ReplicatedStorage:WaitForChild("RoundInfo")
+    local coreLife = roundInfo:WaitForChild("CoreLife")
+    coreLife.Value = coreLife.Value - damage
 end
 
 function RoundService:KnitStart()
 
     AIService = Knit.GetService("AIService")
-
+    HammerService = Knit.GetService("HammerService")
+    PlayerService = Knit.GetService("PlayerService")
     --One source of truth for both client and server
-    local RoundInfo = Instance.new("Folder")
-    RoundInfo.Name = "RoundInfo"
-    RoundInfo.Parent = ReplicatedStorage
+    local roundInfo = Instance.new("Folder")
+    roundInfo.Name = "RoundInfo"
+    roundInfo.Parent = ReplicatedStorage
 
-    local CurrentWave = Instance.new("IntValue")
-    CurrentWave.Name = "CurrentWave"
-    CurrentWave.Parent = RoundInfo
+    local currentWave = Instance.new("IntValue")
+    currentWave.Name = "CurrentWave"
+    currentWave.Parent = roundInfo
 
-    local CoreLife = Instance.new("IntValue")
-    CoreLife.Name = "CoreLife"
-    CoreLife.Parent = RoundInfo
+    local coreLife = Instance.new("IntValue")
+    coreLife.Name = "CoreLife"
+    coreLife.Parent = roundInfo
    
 
-    local function RoundLoop()
-        CoreLife.Value = 1000
-        CurrentWave.Value = 0
-        while CoreLife.Value > 0 and task.wait(1) do
+    local function roundLoop()
+        coreLife.Value = 1000
+        currentWave.Value = 0
+        PlayerService:SpawnAllPlayers()
+        HammerService:ResetUpgrades()
+        while coreLife.Value > 0 and task.wait(1) do
             --Increment wave
-            CurrentWave.Value = CurrentWave.Value + 1
+
+            HammerService:PromptUpgrades()
+            task.wait(5)
+            
+            coreLife.Value = coreLife.Value + 50
+            currentWave.Value = currentWave.Value + 1
 
             --Spawn wave
-            for _ = 1, CurrentWave.Value do
+            for _ = 1, currentWave.Value do
+                task.wait(1) -- Don't spawn all at once or it will make the game too hard
                 AIService:SpawnActor("DummyBot")
             end
             
             --Wait for wave to end
-            repeat task.wait() until AIService:GetNumberOfActors() == 0 or CoreLife.Value <= 0
-            print("Wave ended")
+            repeat task.wait() until AIService:GetNumberOfActors() == 0 or coreLife.Value <= 0
+            
+
         end
 
     end
+
+    PlayerService:SetDeathHandler(function(player)
+        task.wait(5)
+        PlayerService:SpawnPlayer(player)
+    end)
 
     --Round loop
     Promise.new(function()
@@ -75,9 +95,10 @@ function RoundService:KnitStart()
         --Start round loop
         while task.wait() do
             Promise.new(function(resolve, reject) --Critical errors in the round code will be caught and a new game will start
-                RoundLoop()
+                roundLoop()
                 resolve()
             end):catch(warn):finally(function()
+                self.Client.GameOver:FireAll()
                 task.wait(5)
                 print("Game restarting")
             end):await()

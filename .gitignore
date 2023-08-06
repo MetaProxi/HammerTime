@@ -4,4 +4,6 @@
 # Roblox Studio lock files
 /*.rbxlx.lock
 /*.rbxl.lock
-Packages
+
+# Use wally install to get packages!
+Packages 

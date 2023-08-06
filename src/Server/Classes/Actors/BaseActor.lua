@@ -31,10 +31,20 @@ function BaseActor:Constructor(spawnLocation: CFrame)
     self.Humanoid = self.Model:FindFirstChildOfClass("Humanoid")
     assert(self.Humanoid, "No humanoid found in actor model with name"..self.ClassName)
 
-    self.Janitor = Janitor.new()
-
     self.HitCore = Signal.new()
     self.Destroyed = Signal.new()
+    self.Died = Signal.new()
+
+    self.Humanoid.Died:Connect(function()
+        self.Died:Fire()
+        task.delay(5,function()
+            self:Destroy()
+        end)
+    end)
+
+    self.Janitor = Janitor.new()
+
+    
 end
 
 function BaseActor:HeartBeat(dt: number)

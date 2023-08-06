@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 --Dependencies
 local RoundService
+local SpawnUtil = require(ReplicatedStorage.Common.Modules.SpawnUtil)
 
 --Service
 local AIService = Knit.CreateService {
@@ -16,17 +17,12 @@ local AIService = Knit.CreateService {
 }
 
 function AIService:SpawnActor(actorClassName)
-    local spawnFolder: Folder? = workspace:FindFirstChild("Spawns")
+    local spawnFolder: Folder? = workspace:FindFirstChild("EnemySpawns")
     assert(spawnFolder, "No spawns found in workspace")
     local spawns: {BasePart} = spawnFolder:GetChildren()
     assert(#spawns > 0, "No spawns found in workspace")
     local spawnPart = spawns[math.random(1, #spawns)]
-    local spawnSize = spawnPart.Size
-    local randomOffset = Vector3.new(
-        math.random(-spawnSize.X / 2, spawnSize.X / 2),
-        4,
-        math.random(-spawnSize.Z / 2, spawnSize.Z / 2)
-    )
+    local randomOffset = SpawnUtil:GetRandomOffset(spawnPart)
 
     local spawnCFrame = spawnPart.CFrame * CFrame.new(randomOffset)
 
@@ -43,12 +39,26 @@ function AIService:SpawnActor(actorClassName)
     end)
 end
 
-function AIService:GetNumberOfActors()
+function AIService:GetNumberOfActors(): number
     local count = 0
     for _ in self.Actors do
         count = count + 1
     end
     return count
+end
+
+function AIService:GetActorsNearPosition(position: Vector3, radius: number): {BasePart}
+    local actors = {}
+    for _, actor in pairs(self.Actors) do
+        if (actor.Model:GetPivot().Position - position).Magnitude <= radius then
+            table.insert(actors, actor)
+        end
+    end
+    return actors
+end
+
+function AIService:GetActors()
+    return self.Actors
 end
 
 function AIService:KnitStart()
